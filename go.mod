@@ -2,7 +2,11 @@ module github.com/marcnuri-demo/gin-gonic-httptest
 
 go 1.21.2
 
-require github.com/gin-gonic/gin v1.9.1
+require (
+	github.com/gin-gonic/gin v1.9.1
+	github.com/google/uuid v1.3.1
+	github.com/orcaman/concurrent-map/v2 v2.0.1
+)
 
 require (
 	github.com/bytedance/sonic v1.10.2 // indirect

@@ -1,0 +1,16 @@
+### Gets Fallback message
+GET {{baseUri}}/
+Accept: */*
+
+
+### Create new object
+POST {{baseUri}}/
+Accept: application/json
+Content-Type: application/json
+
+{
+    "name": "test",
+    "description": "test",
+    "price": 10.0,
+    "currency": "EUR"
+}
