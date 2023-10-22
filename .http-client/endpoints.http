@@ -2,6 +2,9 @@
 GET {{baseUri}}/
 Accept: */*
 
+### Gets objects
+GET {{baseUri}}/
+Accept: application/json,text/html
 
 ### Create new object
 POST {{baseUri}}/

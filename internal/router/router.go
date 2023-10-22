@@ -5,15 +5,28 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/orcaman/concurrent-map/v2"
+	"strings"
 )
 
 var entries = cmap.New[map[string]interface{}]()
 
 func SetupRouter() *gin.Engine {
 	router := gin.Default()
-	router.GET("/", fallbackGet)
+	router.GET("/", get, fallbackGet)
 	router.POST("/", post)
 	return router
+}
+
+func containsHeader(c *gin.Context) func(key string, value string) bool {
+	return func(key string, value string) bool {
+		values := c.GetHeader(key)
+		for _, v := range strings.Split(values, ",") {
+			if strings.TrimSpace(v) == value {
+				return true
+			}
+		}
+		return false
+	}
 }
 
 func addCommonHeaders(c *gin.Context) {
@@ -22,8 +35,24 @@ func addCommonHeaders(c *gin.Context) {
 }
 
 func fallbackGet(c *gin.Context) {
+	if c.Writer.Size() > -1 {
+		return
+	}
 	addCommonHeaders(c)
 	c.IndentedJSON(200, "Cocktail service")
+}
+
+func get(c *gin.Context) {
+	if !containsHeader(c)("Accept", "application/json") {
+		return
+	}
+	r := make([]map[string]interface{}, 0, entries.Count())
+	for item := range entries.IterBuffered() {
+		r = append(r, item.Val)
+	}
+	addCommonHeaders(c)
+	c.IndentedJSON(200, r)
+	return
 }
 
 func post(c *gin.Context) {
@@ -31,7 +60,7 @@ func post(c *gin.Context) {
 		c.IndentedJSON(400, "Empty body")
 		return
 	}
-	if c.GetHeader("Content-Type") != "application/json" {
+	if !containsHeader(c)("Content-Type", "application/json") {
 		c.IndentedJSON(400, "Invalid Content-Type")
 		return
 	}
