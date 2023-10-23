@@ -2,10 +2,12 @@ package router
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/gin-gonic/gin"
 	"net/http"
 	"net/http/httptest"
 	"regexp"
+	"slices"
 	"strings"
 	"testing"
 )
@@ -32,6 +34,7 @@ type context struct {
 }
 
 func (c *context) beforeEach() {
+	entries.Clear()
 	c.router = SetupRouter()
 	c.recorder = httptest.NewRecorder()
 }
@@ -77,7 +80,6 @@ func TestPostInvalid(t *testing.T) {
 }
 
 func TestPostValid(t *testing.T) {
-	// Given
 	reqBuilder := func() *http.Request {
 		request := httptest.NewRequest("POST", "/", strings.NewReader(`{
 			"name": "test-object",
@@ -94,7 +96,7 @@ func TestPostValid(t *testing.T) {
 	}))
 	t.Run("Returns saved object with id", testCase(func(t *testing.T, c *context) {
 		c.router.ServeHTTP(c.recorder, reqBuilder())
-		body := make(map[string]interface{})
+		var body map[string]interface{}
 		json.Unmarshal(c.recorder.Body.Bytes(), &body)
 		matched, _ := regexp.MatchString("^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}", body["id"].(string))
 		if !matched {
@@ -103,13 +105,53 @@ func TestPostValid(t *testing.T) {
 	}))
 	t.Run("Returns saved object with provided properties", testCase(func(t *testing.T, c *context) {
 		c.router.ServeHTTP(c.recorder, reqBuilder())
-		body := make(map[string]interface{})
+		var body map[string]interface{}
 		json.Unmarshal(c.recorder.Body.Bytes(), &body)
 		if body["name"] != "test-object" {
 			t.Error("Expected object with name = 'test-object', got ", body)
 		}
 		if body["quantity"] != 1.0 {
 			t.Error("Expected object with quantity = 'test-object', got ", body)
+		}
+	}))
+}
+
+func TestGet(t *testing.T) {
+	reqBuilder := func() *http.Request {
+		request := httptest.NewRequest("GET", "/", nil)
+		request.Header.Add("Accept", "application/json")
+		return request
+	}
+	t.Run("Returns empty list", testCase(func(t *testing.T, c *context) {
+		c.router.ServeHTTP(c.recorder, reqBuilder())
+		if c.recorder.Code != 200 {
+			t.Error("Expected 200, got ", c.recorder.Code)
+		}
+		if c.recorder.Body.String() != "[]" {
+			t.Error("Expected empty list, got ", c.recorder.Body.String())
+		}
+	}))
+	t.Run("Returns created objects as list", testCase(func(t *testing.T, c *context) {
+		// Given
+		for i := 1; i <= 3; i++ {
+			request := httptest.NewRequest("POST", "/", strings.NewReader(fmt.Sprintf(`{
+				"object": %d
+			}`, i)))
+			request.Header.Add("Content-Type", "application/json")
+			c.router.ServeHTTP(httptest.NewRecorder(), request)
+		}
+		// When
+		c.router.ServeHTTP(c.recorder, reqBuilder())
+		// Then
+		var body []map[string]interface{}
+		json.Unmarshal(c.recorder.Body.Bytes(), &body)
+		if len(body) != 3 {
+			t.Error("Expected 3 objects, got ", len(body))
+		}
+		if !slices.ContainsFunc(body, func(item map[string]interface{}) bool {
+			return item["object"] == 1.0
+		}) {
+			t.Error("Expected object with object = 1, got ", body)
 		}
 	}))
 }
