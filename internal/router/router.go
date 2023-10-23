@@ -12,8 +12,8 @@ var entries = cmap.New[map[string]interface{}]()
 
 func SetupRouter() *gin.Engine {
 	router := gin.Default()
-	router.GET("/", get, fallbackGet)
-	router.POST("/", post)
+	router.GET("/", addCommonHeaders, get, fallbackGet)
+	router.POST("/", addCommonHeaders, post)
 	return router
 }
 
@@ -38,7 +38,6 @@ func fallbackGet(c *gin.Context) {
 	if c.Writer.Size() > -1 {
 		return
 	}
-	addCommonHeaders(c)
 	c.IndentedJSON(200, "Cocktail service")
 }
 
@@ -50,7 +49,6 @@ func get(c *gin.Context) {
 	for item := range entries.IterBuffered() {
 		r = append(r, item.Val)
 	}
-	addCommonHeaders(c)
 	c.IndentedJSON(200, r)
 	return
 }
@@ -73,6 +71,5 @@ func post(c *gin.Context) {
 	id, _ := uuid.NewRandom()
 	data["id"] = id.String()
 	entries.Set(id.String(), data)
-	addCommonHeaders(c)
 	c.IndentedJSON(201, data)
 }
