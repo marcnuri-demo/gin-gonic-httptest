@@ -27,6 +27,11 @@ func TestFallbackGet(t *testing.T) {
 			t.Error("Expected '\"Cocktail service\"', got ", recorder.Body.String())
 		}
 	})
+	t.Run("Returns Server header", func(t *testing.T) {
+		if recorder.Header().Get("Server") != "gin-gonic/1.33.7" {
+			t.Error("Expected 'gin-gonic/1.33.7', got ", recorder.Header().Get("Server"))
+		}
+	})
 }
 
 type context struct {
