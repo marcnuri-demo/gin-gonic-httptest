@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"net/http"
 	"net/http/httptest"
 	"regexp"
@@ -152,6 +153,94 @@ func TestGet(t *testing.T) {
 			return item["object"] == 1.0
 		}) {
 			t.Error("Expected object with object = 1, got ", body)
+		}
+	}))
+}
+
+func TestPutInvalid(t *testing.T) {
+	t.Run("Returns 400 status code for empty body", testCase(func(t *testing.T, c *context) {
+		c.router.ServeHTTP(c.recorder, httptest.NewRequest("PUT", "/static-id", nil))
+		if c.recorder.Code != 400 {
+			t.Error("Expected 400, got ", c.recorder.Code)
+		}
+		if c.recorder.Body.String() != "\"empty body\"" {
+			t.Error("Expected \"empty body\", got ", c.recorder.Body.String())
+		}
+	}))
+	t.Run("Returns 400 status code for missing Content-Type header", testCase(func(t *testing.T, c *context) {
+		c.router.ServeHTTP(c.recorder, httptest.NewRequest("PUT", "/static-id", strings.NewReader("{}")))
+		if c.recorder.Code != 400 {
+			t.Error("Expected 400, got ", c.recorder.Code)
+		}
+		if c.recorder.Body.String() != "\"invalid Content-Type\"" {
+			t.Error("Expected \"invalid Content-Type\", got ", c.recorder.Body.String())
+		}
+	}))
+	t.Run("Returns 400 status code for invalid JSON", testCase(func(t *testing.T, c *context) {
+		request := httptest.NewRequest("PUT", "/static-id", strings.NewReader("{]"))
+		request.Header.Add("Content-Type", "application/json")
+		c.router.ServeHTTP(c.recorder, request)
+		if c.recorder.Code != 400 {
+			t.Error("Expected 400, got ", c.recorder.Code)
+		}
+		if c.recorder.Body.String() != "\"invalid JSON body\"" {
+			t.Error("Expected \"invalid JSON body\", got ", c.recorder.Body.String())
+		}
+	}))
+}
+
+func TestPutValid(t *testing.T) {
+	reqBuilder := func(providedId ...string) (*http.Request, string) {
+		var id string
+		if len(providedId) > 0 {
+			id = providedId[0]
+		} else {
+			randomId, _ := uuid.NewRandom()
+			id = randomId.String()
+		}
+		request := httptest.NewRequest("PUT", "/"+id, strings.NewReader(`{
+			"name": "test-object",
+			"quantity": 1
+		}`))
+		request.Header.Add("Content-Type", "application/json")
+		return request, id
+	}
+	t.Run("Returns 201 status code for insert", testCase(func(t *testing.T, c *context) {
+		request, _ := reqBuilder()
+		c.router.ServeHTTP(c.recorder, request)
+		if c.recorder.Code != 201 {
+			t.Error("Expected 201, got ", c.recorder.Code)
+		}
+	}))
+	t.Run("Returns 200 status code for update", testCase(func(t *testing.T, c *context) {
+		firstRequest, firstId := reqBuilder()
+		c.router.ServeHTTP(httptest.NewRecorder(), firstRequest)
+		secondRequest, _ := reqBuilder(firstId)
+		c.router.ServeHTTP(c.recorder, secondRequest)
+		if c.recorder.Code != 200 {
+			t.Error("Expected 200, got ", c.recorder.Code)
+		}
+	}))
+	t.Run("Returns saved object with id", testCase(func(t *testing.T, c *context) {
+		request, _ := reqBuilder()
+		c.router.ServeHTTP(c.recorder, request)
+		var body map[string]interface{}
+		json.Unmarshal(c.recorder.Body.Bytes(), &body)
+		matched, _ := regexp.MatchString("^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}", body["id"].(string))
+		if !matched {
+			t.Error("Expected object with id, got ", body)
+		}
+	}))
+	t.Run("Returns saved object with provided properties", testCase(func(t *testing.T, c *context) {
+		request, _ := reqBuilder()
+		c.router.ServeHTTP(c.recorder, request)
+		var body map[string]interface{}
+		json.Unmarshal(c.recorder.Body.Bytes(), &body)
+		if body["name"] != "test-object" {
+			t.Error("Expected object with name = 'test-object', got ", body)
+		}
+		if body["quantity"] != 1.0 {
+			t.Error("Expected object with quantity = 'test-object', got ", body)
 		}
 	}))
 }
