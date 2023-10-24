@@ -2,18 +2,27 @@
 GET {{baseUri}}/
 Accept: */*
 
-### Gets objects
-GET {{baseUri}}/
-Accept: application/json,text/html
-
 ### Create new object
 POST {{baseUri}}/
 Accept: application/json
 Content-Type: application/json
 
 {
-    "name": "test",
-    "description": "test",
-    "price": 10.0,
-    "currency": "EUR"
+  "name": "test",
+  "description": "test",
+  "price": 10.0,
+  "currency": "EUR"
 }
+
+### Gets objects (and store ID)
+GET {{baseUri}}/
+Accept: application/json,text/html
+
+> {%
+   response.body.forEach(item => {
+     client.global.set("id", item.id)
+   })
+ %}
+
+### Delete object by id
+DELETE {{baseUri}}/{{id}}
