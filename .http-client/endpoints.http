@@ -14,6 +14,18 @@ Content-Type: application/json
   "currency": "EUR"
 }
 
+### Upsert object
+PUT {{baseUri}}/a-static-id
+Accept: application/json
+Content-Type: application/json
+
+{
+  "name": "test-upsert",
+  "description": "upserted object",
+  "price": 10.0,
+  "currency": "EUR"
+}
+
 ### Gets objects (and store ID)
 GET {{baseUri}}/
 Accept: application/json,text/html

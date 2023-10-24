@@ -53,8 +53,8 @@ func TestPostInvalid(t *testing.T) {
 		if c.recorder.Code != 400 {
 			t.Error("Expected 400, got ", c.recorder.Code)
 		}
-		if c.recorder.Body.String() != "\"Empty body\"" {
-			t.Error("Expected \"Empty body\", got ", c.recorder.Body.String())
+		if c.recorder.Body.String() != "\"empty body\"" {
+			t.Error("Expected \"empty body\", got ", c.recorder.Body.String())
 		}
 	}))
 	t.Run("Returns 400 status code for missing Content-Type header", testCase(func(t *testing.T, c *context) {
@@ -62,8 +62,8 @@ func TestPostInvalid(t *testing.T) {
 		if c.recorder.Code != 400 {
 			t.Error("Expected 400, got ", c.recorder.Code)
 		}
-		if c.recorder.Body.String() != "\"Invalid Content-Type\"" {
-			t.Error("Expected \"Invalid Content-Type\", got ", c.recorder.Body.String())
+		if c.recorder.Body.String() != "\"invalid Content-Type\"" {
+			t.Error("Expected \"invalid Content-Type\", got ", c.recorder.Body.String())
 		}
 	}))
 	t.Run("Returns 400 status code for invalid JSON", testCase(func(t *testing.T, c *context) {
@@ -73,8 +73,8 @@ func TestPostInvalid(t *testing.T) {
 		if c.recorder.Code != 400 {
 			t.Error("Expected 400, got ", c.recorder.Code)
 		}
-		if c.recorder.Body.String() != "\"Invalid JSON body\"" {
-			t.Error("Expected \"Invalid JSON body\", got ", c.recorder.Body.String())
+		if c.recorder.Body.String() != "\"invalid JSON body\"" {
+			t.Error("Expected \"invalid JSON body\", got ", c.recorder.Body.String())
 		}
 	}))
 }
