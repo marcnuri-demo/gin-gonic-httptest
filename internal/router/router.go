@@ -14,6 +14,7 @@ func SetupRouter() *gin.Engine {
 	router := gin.Default()
 	router.GET("/", addCommonHeaders, get, fallbackGet)
 	router.POST("/", addCommonHeaders, post)
+	router.DELETE("/:id", addCommonHeaders, remove)
 	return router
 }
 
@@ -72,4 +73,14 @@ func post(c *gin.Context) {
 	data["id"] = id.String()
 	entries.Set(id.String(), data)
 	c.IndentedJSON(201, data)
+}
+
+func remove(c *gin.Context) {
+	id := c.Param("id")
+	if !entries.Has(id) {
+		c.IndentedJSON(404, "Not found")
+		return
+	}
+	entries.Remove(id)
+	c.Status(204)
 }
