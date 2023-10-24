@@ -155,3 +155,27 @@ func TestGet(t *testing.T) {
 		}
 	}))
 }
+
+func TestDelete(t *testing.T) {
+	t.Run("With existing object returns 204 status code", testCase(func(t *testing.T, c *context) {
+		// Given
+		request := httptest.NewRequest("POST", "/", strings.NewReader("{}"))
+		request.Header.Add("Content-Type", "application/json")
+		requestRecorder := httptest.NewRecorder()
+		c.router.ServeHTTP(requestRecorder, request)
+		var newObject map[string]interface{}
+		json.Unmarshal(requestRecorder.Body.Bytes(), &newObject)
+		// When
+		c.router.ServeHTTP(c.recorder, httptest.NewRequest("DELETE", "/"+newObject["id"].(string), nil))
+		// Then
+		if c.recorder.Code != 204 {
+			t.Error("Expected 204, got ", c.recorder.Code)
+		}
+	}))
+	t.Run("With missing object returns 404 status code", testCase(func(t *testing.T, c *context) {
+		c.router.ServeHTTP(c.recorder, httptest.NewRequest("DELETE", "/a-random-id", nil))
+		if c.recorder.Code != 404 {
+			t.Error("Expected 404, got ", c.recorder.Code)
+		}
+	}))
+}
